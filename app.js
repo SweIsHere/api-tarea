@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const { db, initDB } = require('./db');
 
 const app = express();
-const port = 8001
+const port = 8001;
 
 app.use(bodyParser.json());
 
@@ -64,6 +64,43 @@ app.delete('/users/:id', (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`API REST corriendo en http://localhost:${port}`);
+app.patch('/users/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, email } = req.body;
+
+ 
+  let updates = [];
+  let params = [];
+
+  if (name) {
+    updates.push('name = ?');
+    params.push(name);
+  }
+
+  if (email) {
+    updates.push('email = ?');
+    params.push(email);
+  }
+
+  if (updates.length === 0) {
+    res.status(400).json({ error: 'No se proporcionaron campos para actualizar' });
+    return;
+  }
+
+  params.push(id); 
+
+  const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+
+  db.run(sql, params, function (err) {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({ updated: this.changes });
+  });
+});
+
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`API REST corriendo en http://0.0.0.0:${port}`);
 });
